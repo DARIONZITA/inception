@@ -1,0 +1,15 @@
+services:
+  nginx:
+    build: ./ngnix
+    image: meu-nginx
+    container_name: nginx
+    ports:
+      - 8080:80
+    volumes:
+      - ./web:/var/www/html/
+  w_fpm:
+    build: ./wordpress
+    image: wordpress
+    container_name: w_fpm
+    volumes:
+      - ./web:/var/www/html/

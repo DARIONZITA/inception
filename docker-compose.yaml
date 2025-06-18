@@ -1,15 +1,61 @@
 services:
-  nginx:
-    build: ./ngnix
-    image: meu-nginx
-    container_name: nginx
-    ports:
-      - 8080:80
+  mariadb:
+    build: ./requirements/mariadb
+    image: mariadb
+    container_name: mariadb
+    env_file: .env
     volumes:
-      - ./web:/var/www/html/
+      - data_mariadb:/var/lib/mysql
+    networks:
+      - inception
+    secrets:
+      - db_mysql_password
+    environment:
+      DB_MYSQL_PASSWORD: /run/secrets/db_mysql_password
+  nginx:
+    build: ./requirements/nginx
+    depends_on:
+      - w_fpm
+    image: meu-nginx
+    container_name: nginx	
+    ports:
+      - 443:443
+    volumes:
+      - web:/var/www/html/
+    restart: always
+    env_file: .env
+    networks:
+      - inception
   w_fpm:
-    build: ./wordpress
+    depends_on:
+      - mariadb
+    build: ./requirements/wordpress
     image: wordpress
     container_name: w_fpm
+    restart: always
+    env_file: .env
+    networks:
+      - inception
     volumes:
-      - ./web:/var/www/html/
+      - web:/var/www/html/
+    secrets:
+      - db_mysql_password
+      - wp_admin_pass
+      - wp_user_pass
+    environment:
+      DB_MYSQL_PASSWORD: /run/secrets/db_mysql_password
+      WP_ADMIN_PASSWORD: /run/secrets/wp_admin_pass
+      WP_USER_PASSWORD: /run/secrets/wp_user_pass
+networks:
+  inception:
+volumes:
+  web:
+  data_mariadb:
+
+secrets:
+  db_mysql_password:
+     file: ../secrets/mysql_password
+  wp_admin_pass:
+     file: ../secrets/wp_admin_pass
+  wp_user_pass:
+     file: ../secrets/wp_user_pass
